@@ -1,3 +1,4 @@
+--AUTOR: ARIONE JUNIOR 
 SELECT   banco AS nome, 'BANCO' AS x, valor AS y
   FROM   (SELECT   d.codbanco || ' - ' || d.nomebanco banco, d.valor valor
             FROM   table(CAST (
