@@ -2,6 +2,8 @@
 -- VALOR DE ENTRADA DE MERCADORIAS MÊS ATUAL
 
 
+
+
 SELECT   round(SUM (vlentrada),2) as valor
   FROM   (  SELECT   pcnfent.codfornec,
                      pcfornec.fornecedor,
