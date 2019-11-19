@@ -1,14 +1,14 @@
 --AUTOR CONSULTOR TOTVS ARIONE.JUNIOR@TOTVS.COM.BR
 --NOME RELATORIO: VALOR DE ENTRADA DE MERCADORIA NO MÊS ATUAL
---ROTINA 218 VALIDANDO DEVOLUÇÃO DE FORNECEDOR ROTINA 158
+--ROTINA 218 - 158 POR PRODUTO DEPARTAMENTOS [PARAMETRIZADO]
 --ERP WINTHOR
 --TIPO DO GRÁFICO: ABSOLUTO
 
 
 SELECT   SUM (tabela.VLTOTAL) vltotal FROM   (
 SELECT   SUM(compra.vlentrad) VLENTRAD,
-                   saida.vldevol,
-                   SUM(compra.vlentrad) - saida.vldevol vltotal
+                   nvl(saida.vldevol,0) vldevol,
+                   SUM(compra.vlentrad) - nvl(saida.vldevol,0) vltotal
             FROM   (  SELECT   ( (DECODE (pcmov.status,
                                           'A', NVL (pcmov.qtcont, 0),
                                           NVL (pcmov.qt, 0)))
@@ -56,43 +56,27 @@ SELECT   SUM(compra.vlentrad) VLENTRAD,
                                          AND ( (pcnfent.especie = 'NF')
                                               OR (pcnfent.especie = 'NE')))))
                                AND (pcprodut.codepto IN (100))
-                               AND pcmov.dtmov BETWEEN TO_DATE (
-                                                           '01/'
-                                                           || TO_CHAR (
-                                                                  ADD_MONTHS (
-                                                                      TRUNC(SYSDATE),
-                                                                      -0),
-                                                                  'MM/YYYY'),
-                                                           'DD/MM/YYYY')
-                                                   AND  LAST_DAY(ADD_MONTHS (
-                                                                     TRUNC(SYSDATE),
-                                                                     -0)) /*PERIODO MÊS ATUAL*/
+                               AND pcmov.dtmov BETWEEN TO_DATE ('01/' || TO_CHAR (ADD_MONTHS (TRUNC(SYSDATE),-0), 'MM/YYYY'),'DD/MM/YYYY')
+                                    AND  LAST_DAY(ADD_MONTHS (TRUNC(SYSDATE),-0)) /*PERIODO MÊS ATUAL*/
                                AND pcnfent.codfilial IN ('1') -- FILIAL DEFINIDA
                                AND pcprodut.codepto IN (100) --PARAMETRO CLIENTE
                                AND pcprodut.codsec IN (101) --PARAMETRO CLIENTE
                                AND pcmov.codoper LIKE 'E%'
                                 ) compra,
-                   (  SELECT                                            
-                               SUM (NVL (pcprest.valor, 0)) vldevol
-                        FROM   pcnfsaid, pcprest, pcclient
-                       WHERE   pcnfsaid.numtransvenda = pcprest.numtransvenda
-                               AND pcprest.codcli = pcclient.codcli
-                               AND pcprest.dtpag IS NULL
-                               AND pcnfsaid.dtsaida BETWEEN TO_DATE (
-                                                                '01/'
-                                                                || TO_CHAR (
-                                                                       ADD_MONTHS (
-                                                                           TRUNC(SYSDATE),
-                                                                           -0),
-                                                                       'MM/YYYY'),
-                                                                'DD/MM/YYYY')
-                                                        AND  LAST_DAY(ADD_MONTHS (
-                                                                          TRUNC(SYSDATE),
-                                                                          -0))
-                               AND pcnfsaid.dtcancel IS NULL
-                               AND pcnfsaid.codfilial = '1'
-                               AND pcnfsaid.codfiscal IN
-                                          (532, 632, 732, 5202, 6202)
-                    ORDER BY   vldevol DESC) saida
-                    GROUP BY saida.vldevol
+                   (  SELECT ROUND(SUM(NVL(PCMOVCOMPLE.VLSUBTOTITEM, NVL(PCMOV.QT,0)*NVL(PCMOV.PUNIT,0)) ),2) VLDEVOL
+                             FROM PCNFSAID, PCMOV, PCPRODUT, PCMOVCOMPLE
+                            WHERE PCNFSAID.NUMTRANSVENDA = PCMOV.NUMTRANSVENDA
+                              AND PCMOVCOMPLE.NUMTRANSITEM = PCMOV.NUMTRANSITEM
+                              AND PCMOV.CODPROD = PCPRODUT.CODPROD
+                              AND pcnfsaid.dtsaida BETWEEN TO_DATE ('01/' || TO_CHAR (ADD_MONTHS (TRUNC(SYSDATE),-0), 'MM/YYYY'),'DD/MM/YYYY')
+                                    AND  LAST_DAY(ADD_MONTHS (TRUNC(SYSDATE),-0))
+                              AND PCNFSAID.DTCANCEL IS NULL  
+                              AND PCNFSAID.CODFILIAL ='1'
+                              AND PCNFSAID.CODFISCAL IN (532,632,732,5202,6202)
+                              AND pcprodut.codepto IN (100) --PARAMETRO CLIENTE
+                              AND pcprodut.codsec IN (101) --PARAMETRO CLIENTE
+                         ORDER BY VLTOTAL DESC) saida
+                             
+                         
+                         GROUP BY saida.vldevol
                     ) tabela;
