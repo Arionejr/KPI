@@ -1,4 +1,4 @@
-SELECT     'filial - 1' as serie, GERAL.MES as x ,
+SELECT     'filial - 1' as serie, GERAL.MES as x , 
              GERAL.VLVENDALIQUIDO   as y
          FROM (SELECT BASE.ANO
                     , BASE.MES, BASE.MES_1
